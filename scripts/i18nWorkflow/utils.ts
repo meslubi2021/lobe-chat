@@ -1,24 +1,18 @@
 import { consola } from 'consola';
 import { colors } from 'consola/utils';
-import { tocForResources } from 'i18next-resources-for-ts';
-import { isObject } from 'lodash';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import i18nConfig from '../../.i18nrc';
-import { srcLocalesResources } from './const';
 
 export const readJSON = (filePath: string) => {
   const data = readFileSync(filePath, 'utf8');
   return JSON.parse(data);
 };
 
-export const replaceAssistantToAgent = (text: string) =>
-  text.replaceAll('assistant', 'agent').replaceAll('Assistant', 'Agent');
-
 export const writeJSON = (filePath: string, data: any) => {
   const jsonStr = JSON.stringify(data, null, 2);
-  writeFileSync(filePath, replaceAssistantToAgent(jsonStr), 'utf8');
+  writeFileSync(filePath, jsonStr, 'utf8');
 };
 
 export const genResourcesContent = (locales: string[]) => {
@@ -47,28 +41,6 @@ export const genNamespaceList = (files: string[], locale: string) => {
     name: file.replace('.json', ''),
     path: resolve(i18nConfig.output, locale, file),
   }));
-};
-
-export const genToc = (files: string[], locale: string) => {
-  const ns = genNamespaceList(files, locale);
-  let toc = tocForResources(ns, srcLocalesResources).replaceAll('\\', '/');
-  if (locale === i18nConfig.entryLocale) {
-    toc = toc.replaceAll('.json', '').replaceAll('../../../locales/zh_CN', '../default');
-  }
-  return toc;
-};
-
-export const diff = (obj1: any, obj2: any, prefix: string = ''): string[] => {
-  let result: string[] = [];
-  for (const key in obj1) {
-    if (!obj2[key]) continue;
-    if (isObject(obj1[key]) && isObject(obj2[key])) {
-      result = [...result, ...diff(obj1[key], obj2[key], `${prefix}${key}.`)];
-    } else if (obj1[key] !== obj2[key]) {
-      result.push(`${prefix}${key}`);
-    }
-  }
-  return result;
 };
 
 export const tagBlue = (text: string) => colors.bgBlueBright(colors.black(` ${text} `));

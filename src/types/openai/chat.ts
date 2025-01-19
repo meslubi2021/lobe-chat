@@ -1,5 +1,7 @@
-import { OpenAIFunctionCall } from '@/types/chatMessage';
 import { LLMRoleType } from '@/types/llm';
+import { MessageToolCall } from '@/types/message';
+
+import { OpenAIFunctionCall } from './functionCall';
 
 interface UserMessageContentPartText {
   text: string;
@@ -22,6 +24,9 @@ export interface OpenAIChatMessage {
    */
   content: string | UserMessageContentPart[];
 
+  /**
+   * @deprecated
+   */
   function_call?: OpenAIFunctionCall;
   name?: string;
   /**
@@ -29,12 +34,14 @@ export interface OpenAIChatMessage {
    * @description 消息发送者的角色
    */
   role: LLMRoleType;
+  tool_call_id?: string;
+  tool_calls?: MessageToolCall[];
 }
 
 /**
- * @title OpenAI Stream Payload
+ * @title Chat Stream Payload
  */
-export interface OpenAIChatStreamPayload {
+export interface ChatStreamPayload {
   /**
    * @title 控制生成文本中的惩罚系数，用于减少重复性
    * @default 0
@@ -66,16 +73,21 @@ export interface OpenAIChatStreamPayload {
    */
   presence_penalty?: number;
   /**
+   * @default openai
+   */
+  provider?: string;
+  /**
    * @title 是否开启流式请求
    * @default true
    */
   stream?: boolean;
   /**
    * @title 生成文本的随机度量，用于控制文本的创造性和多样性
-   * @default 0.5
+   * @default 1
    */
   temperature: number;
-
+  tool_choice?: string;
+  tools?: ChatCompletionTool[];
   /**
    * @title 控制生成文本中最高概率的单个令牌
    * @default 1
@@ -104,4 +116,13 @@ export interface ChatCompletionFunctions {
   parameters?: {
     [key: string]: any;
   };
+}
+
+export interface ChatCompletionTool {
+  function: ChatCompletionFunctions;
+
+  /**
+   * The type of the tool. Currently, only `function` is supported.
+   */
+  type: 'function';
 }

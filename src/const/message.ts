@@ -1,6 +1,9 @@
 export const LOADING_FLAT = '...';
 
-// 只要 start with 这个，就可以判断为 function message
-export const FUNCTION_MESSAGE_FLAG = '{"function';
+export const MESSAGE_CANCEL_FLAT = 'canceled';
 
-export const FUNCTION_LOADING = 'FUNCTION_LOADING';
+export const MESSAGE_THREAD_DIVIDER_ID = '__THREAD_DIVIDER__';
+
+export const MESSAGE_WELCOME_GUIDE_ID = 'welcome';
+
+export const THREAD_DRAFT_ID = '__THREAD_DRAFT_ID__';

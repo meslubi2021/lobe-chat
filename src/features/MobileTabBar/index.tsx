@@ -6,8 +6,8 @@ import { rgba } from 'polished';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { useGlobalStore } from '@/store/global';
 import { SidebarTabKey } from '@/store/global/initialState';
+import { featureFlagsSelectors, useServerConfigStore } from '@/store/serverConfig';
 
 const useStyles = createStyles(({ css, token }) => ({
   active: css`
@@ -17,51 +17,54 @@ const useStyles = createStyles(({ css, token }) => ({
   `,
 }));
 
-export default memo<{ className?: string }>(({ className }) => {
-  const [tab, setTab] = useGlobalStore((s) => [s.sidebarKey, s.switchSideBar]);
+interface Props {
+  className?: string;
+  tabBarKey?: SidebarTabKey;
+}
+
+export default memo<Props>(({ className, tabBarKey }) => {
   const { t } = useTranslation('common');
   const { styles } = useStyles();
   const router = useRouter();
+  const openSettings = () => {
+    router.push('/settings/llm');
+  };
+  const { showMarket } = useServerConfigStore(featureFlagsSelectors);
+
   const items: MobileTabBarProps['items'] = useMemo(
-    () => [
-      {
-        icon: (active) => (
-          <Icon className={active ? styles.active : undefined} icon={MessageSquare} />
-        ),
-        key: SidebarTabKey.Chat,
-        onClick: () => {
-          setTab(SidebarTabKey.Chat);
-          router.push('/chat');
+    () =>
+      [
+        {
+          icon: (active: boolean) => (
+            <Icon className={active ? styles.active : undefined} icon={MessageSquare} />
+          ),
+          key: SidebarTabKey.Chat,
+          onClick: () => {
+            router.push('/chat');
+          },
+          title: t('tab.chat'),
         },
-        title: t('tab.chat'),
-      },
-      {
-        icon: (active) => <Icon className={active ? styles.active : undefined} icon={Bot} />,
-        key: SidebarTabKey.Market,
-        onClick: () => {
-          setTab(SidebarTabKey.Market);
-          router.push('/market');
+        showMarket && {
+          icon: (active: boolean) => (
+            <Icon className={active ? styles.active : undefined} icon={Bot} />
+          ),
+          key: SidebarTabKey.Discover,
+          onClick: () => {
+            router.push('/discover');
+          },
+          title: t('tab.discover'),
         },
-        title: t('tab.market'),
-      },
-      {
-        icon: (active) => <Icon className={active ? styles.active : undefined} icon={User} />,
-        key: SidebarTabKey.Setting,
-        onClick: () => {
-          setTab(SidebarTabKey.Setting);
-          router.push('/settings');
+        {
+          icon: (active: boolean) => (
+            <Icon className={active ? styles.active : undefined} icon={User} />
+          ),
+          key: SidebarTabKey.Setting,
+          onClick: openSettings,
+          title: t('tab.setting'),
         },
-        title: t('tab.setting'),
-      },
-    ],
+      ].filter(Boolean) as MobileTabBarProps['items'],
     [t],
   );
-  return (
-    <MobileTabBar
-      activeKey={tab}
-      className={className}
-      items={items}
-      onChange={(key) => setTab(key as any)}
-    />
-  );
+
+  return <MobileTabBar activeKey={tabBarKey} className={className} items={items} safeArea />;
 });

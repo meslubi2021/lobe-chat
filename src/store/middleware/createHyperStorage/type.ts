@@ -1,14 +1,16 @@
 export type StorageSelector = string | Record<string, string>;
 
-export interface HyperStorageOptions {
-  localStorage?: {
-    dbName?: string;
-    /**
-     * @default 'localStorage'
-     */
-    mode?: 'indexedDB' | 'localStorage';
-    selectors: StorageSelector[];
-  };
+export interface LocalStorageOptions {
+  dbName?: string;
+  /**
+   * @default 'localStorage'
+   */
+  mode?: 'indexedDB' | 'localStorage';
+  selectors: StorageSelector[];
+}
+
+export type HyperStorageOptionsObj = {
+  localStorage?: LocalStorageOptions | false;
   url?: {
     /**
      * @default 'hash'
@@ -16,4 +18,8 @@ export interface HyperStorageOptions {
     mode?: 'hash' | 'search';
     selectors: StorageSelector[];
   };
-}
+};
+
+export type HyperStorageOptionsFn = () => HyperStorageOptionsObj;
+
+export type HyperStorageOptions = HyperStorageOptionsObj | HyperStorageOptionsFn;

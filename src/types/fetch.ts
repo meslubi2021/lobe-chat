@@ -1,10 +1,18 @@
 /* eslint-disable sort-keys-fix/sort-keys-fix */
+import { ILobeAgentRuntimeErrorType } from '@/libs/agent-runtime';
+
 export const ChatErrorType = {
   // ******* 业务错误语义 ******* //
 
-  InvalidAccessCode: 'InvalidAccessCode', // 密码无效
-  OpenAIBizError: 'OpenAIBizError', // OpenAI 返回的业务错误
-  NoAPIKey: 'NoAPIKey',
+  InvalidAccessCode: 'InvalidAccessCode', // is in valid password
+  InvalidClerkUser: 'InvalidClerkUser', // is not Clerk User
+  /**
+   * @deprecated
+   */
+  NoOpenAIAPIKey: 'NoOpenAIAPIKey',
+  OllamaServiceUnavailable: 'OllamaServiceUnavailable', // 未启动/检测到 Ollama 服务
+  PluginFailToTransformArguments: 'PluginFailToTransformArguments',
+  UnknownChatFetchError: 'UnknownChatFetchError',
 
   // ******* 客户端错误 ******* //
   BadRequest: 400,
@@ -14,7 +22,7 @@ export const ChatErrorType = {
   MethodNotAllowed: 405, // 不支持
   TooManyRequests: 429,
 
-  // ******* 服务端错误 ******* //
+  // ******* 服务端错误 ******* //InvalidPluginArgumentsTransform
   InternalServerError: 500,
   BadGateway: 502,
   ServiceUnavailable: 503,
@@ -26,5 +34,5 @@ export type ErrorType = (typeof ChatErrorType)[keyof typeof ChatErrorType];
 
 export interface ErrorResponse {
   body: any;
-  errorType: ErrorType;
+  errorType: ErrorType | ILobeAgentRuntimeErrorType;
 }

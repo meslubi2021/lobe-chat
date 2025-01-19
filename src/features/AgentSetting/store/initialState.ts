@@ -1,11 +1,12 @@
 import { DEFAULT_AGENT_META } from '@/const/meta';
 import { DEFAULT_AGENT_CONFIG } from '@/const/settings';
+import { LobeAgentConfig } from '@/types/agent';
 import { MetaData } from '@/types/meta';
-import { LobeAgentConfig } from '@/types/session';
 
 export interface State {
   autocompleteLoading: SessionLoadingState;
   config: LobeAgentConfig;
+  id?: string;
   meta: MetaData;
 
   onConfigChange?: (config: LobeAgentConfig) => void;
@@ -22,7 +23,6 @@ export const initialState: State = {
     tags: false,
     title: false,
   },
-
   config: DEFAULT_AGENT_CONFIG,
   meta: DEFAULT_AGENT_META,
 };

@@ -1,7 +1,7 @@
-import { getCurrentLanguage } from '@/store/global/helpers';
-import { OpenAIChatStreamPayload } from '@/types/openai/chat';
+import { globalHelpers } from '@/store/user/helpers';
+import { ChatStreamPayload } from '@/types/openai/chat';
 
-export const chainSummaryTags = (content: string): Partial<OpenAIChatStreamPayload> => ({
+export const chainSummaryTags = (content: string): Partial<ChatStreamPayload> => ({
   messages: [
     {
       content:
@@ -23,6 +23,6 @@ export const chainSummaryTags = (content: string): Partial<OpenAIChatStreamPaylo
       role: 'user',
     },
     { content: 'entrepreneurship,planning,consulting', role: 'assistant' },
-    { content: `输入: {${content}} [${getCurrentLanguage()}]`, role: 'user' },
+    { content: `输入: {${content}} [${globalHelpers.getCurrentLanguage()}]`, role: 'user' },
   ],
 });

@@ -1,20 +1,140 @@
-/**
- * LLM 模型
- */
-export enum LanguageModel {
+import { ReactNode } from 'react';
+
+import { ChatModelPricing } from '@/types/aiModel';
+import { AiProviderSettings } from '@/types/aiProvider';
+
+export type ModelPriceCurrency = 'CNY' | 'USD';
+
+export interface ChatModelCard {
   /**
-   * GPT 3.5 Turbo
+   * the context window (or input + output tokens limit)
    */
-  GPT3_5 = 'gpt-3.5-turbo',
-  GPT3_5_1106 = 'gpt-3.5-turbo-1106',
-  GPT3_5_16K = 'gpt-3.5-turbo-16k',
+  contextWindowTokens?: number;
   /**
-   * GPT 4
+   * only used in azure
    */
-  GPT4 = 'gpt-4',
-  GPT4_32K = 'gpt-4-32k',
-  GPT4_PREVIEW = 'gpt-4-1106-preview',
-  GPT4_VISION_PREVIEW = 'gpt-4-vision-preview',
+  deploymentName?: string;
+  description?: string;
+  /**
+   * the name show for end user
+   */
+  displayName?: string;
+  /**
+   * whether model is enabled by default
+   */
+  enabled?: boolean;
+  /**
+   * whether model supports file upload
+   */
+  files?: boolean;
+  /**
+   * whether model supports function call
+   */
+  functionCall?: boolean;
+  id: string;
+  /**
+   * whether model is custom
+   */
+  isCustom?: boolean;
+  /**
+   * whether model is legacy (deprecated but not removed yet)
+   */
+  legacy?: boolean;
+  maxOutput?: number;
+  pricing?: ChatModelPricing;
+  releasedAt?: string;
+
+  /**
+   *  whether model supports vision
+   */
+  vision?: boolean;
+}
+
+export interface SmoothingParams {
+  speed?: number;
+  text?: boolean;
+  toolsCalling?: boolean;
+}
+
+export interface ModelProviderCard {
+  /**
+   * @deprecated
+   */
+  chatModels: ChatModelCard[];
+  /**
+   * the default model that used for connection check
+   */
+  checkModel?: string;
+  /**
+   * whether provider show browser request option by default
+   * @deprecated
+   * @default false
+   */
+  defaultShowBrowserRequest?: boolean;
+  description?: string;
+  /**
+   * some provider server like stepfun and aliyun don't support browser request,
+   * So we should disable it
+   * @deprecated
+   * @default false
+   */
+  disableBrowserRequest?: boolean;
+  /**
+   * whether provider is enabled by default
+   */
+  enabled?: boolean;
+  id: string;
+  /**
+   * @deprecated
+   */
+  modelList?: {
+    azureDeployName?: boolean;
+    notFoundContent?: ReactNode;
+    placeholder?: string;
+    showModelFetcher?: boolean;
+  };
+  /**
+   * the url show the all models in the provider
+   */
+  modelsUrl?: string;
+  /**
+   * the name show for end user
+   */
+  name: string;
+  /**
+   * @deprecated
+   */
+  proxyUrl?:
+    | {
+        desc?: string;
+        placeholder: string;
+        title?: string;
+      }
+    | false;
+
+  settings: AiProviderSettings;
+  /**
+   * whether show api key in the provider config
+   * so provider like ollama don't need api key field
+   * @deprecated
+   */
+  showApiKey?: boolean;
+
+  /**
+   * whether show checker in the provider config
+   * @deprecated
+   */
+  showChecker?: boolean;
+
+  /**
+   * whether to smoothing the output
+   * @deprecated
+   */
+  smoothing?: SmoothingParams;
+  /**
+   * provider's website url
+   */
+  url: string;
 }
 
 // 语言模型的设置参数
@@ -35,7 +155,7 @@ export interface LLMParams {
   presence_penalty?: number;
   /**
    * 生成文本的随机度量，用于控制文本的创造性和多样性
-   * @default 0.6
+   * @default 1
    */
   temperature?: number;
   /**
@@ -45,11 +165,11 @@ export interface LLMParams {
   top_p?: number;
 }
 
-export type LLMRoleType = 'user' | 'system' | 'assistant' | 'function';
+export type LLMRoleType = 'user' | 'system' | 'assistant' | 'tool';
 
 export interface LLMMessage {
   content: string;
   role: LLMRoleType;
 }
 
-export type LLMExample = LLMMessage[];
+export type FewShots = LLMMessage[];

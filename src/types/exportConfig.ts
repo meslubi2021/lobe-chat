@@ -1,5 +1,7 @@
-import { LobeAgentSession, LobeSessions } from '@/types/session';
-import { GlobalSettings } from '@/types/settings';
+import { ChatMessage } from '@/types/message';
+import { LobeSessions, SessionGroupItem } from '@/types/session';
+import { ChatTopic } from '@/types/topic';
+import { UserSettings } from '@/types/user/settings';
 
 /**
  * 导出方式
@@ -40,21 +42,26 @@ export interface ConfigModelMap {
  * 配置状态：会话
  */
 export interface ConfigStateSessions {
-  inbox: LobeAgentSession;
+  messages: ChatMessage[];
+  sessionGroups: SessionGroupItem[];
   sessions: LobeSessions;
+  topics: ChatTopic[];
 }
 
 /**
  * 配置状态：单个会话
  */
 export interface ConfigStateSingleSession {
+  messages: ChatMessage[];
   sessions: LobeSessions;
+  topics: ChatTopic[];
 }
 
 /**
  * 配置状态：角色
  */
 export interface ConfigStateAgents {
+  sessionGroups: SessionGroupItem[];
   sessions: LobeSessions;
 }
 
@@ -62,7 +69,7 @@ export interface ConfigStateAgents {
  * 配置状态：设置
  */
 export interface ConfigStateSettings {
-  settings: GlobalSettings;
+  settings: UserSettings;
 }
 
 /**

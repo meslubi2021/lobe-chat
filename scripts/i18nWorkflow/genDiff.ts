@@ -1,20 +1,21 @@
 import { consola } from 'consola';
 import { colors } from 'consola/utils';
+import { diff } from 'just-diff';
 import { unset } from 'lodash';
 import { existsSync } from 'node:fs';
 
 import {
   entryLocaleJsonFilepath,
   i18nConfig,
-  localesResourcesFilepath,
   outputLocaleJsonFilepath,
+  srcDefaultLocales,
 } from './const';
-import { diff, readJSON, tagWhite, tagYellow, writeJSON } from './utils';
+import { readJSON, tagWhite, writeJSON } from './utils';
 
 export const genDiff = () => {
   consola.start(`Diff between Dev/Prod local...`);
 
-  const resources = require(localesResourcesFilepath(i18nConfig.entryLocale));
+  const resources = require(srcDefaultLocales);
   const data = Object.entries(resources.default);
 
   for (const [ns, devJSON] of data) {
@@ -22,14 +23,12 @@ export const genDiff = () => {
     if (!existsSync(filepath)) continue;
     const prodJSON = readJSON(filepath);
 
-    const diffKeys = diff(devJSON, prodJSON);
-
-    if (diffKeys.length === 0) {
+    const diffResult = diff(prodJSON, devJSON as any);
+    const remove = diffResult.filter((item) => item.op === 'remove');
+    if (remove.length === 0) {
       consola.success(tagWhite(ns), colors.gray(filepath));
       continue;
     }
-
-    consola.warn(tagYellow(ns), diffKeys);
 
     const clearLocals = [];
 
@@ -38,8 +37,8 @@ export const genDiff = () => {
       if (!existsSync(localeFilepath)) continue;
       const localeJSON = readJSON(localeFilepath);
 
-      for (const key of diffKeys) {
-        unset(localeJSON, key);
+      for (const item of remove) {
+        unset(localeJSON, item.path);
       }
 
       writeJSON(localeFilepath, localeJSON);

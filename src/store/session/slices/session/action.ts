@@ -1,68 +1,92 @@
-import { produce } from 'immer';
+import isEqual from 'fast-deep-equal';
+import { t } from 'i18next';
+import useSWR, { SWRResponse, mutate } from 'swr';
 import { DeepPartial } from 'utility-types';
 import { StateCreator } from 'zustand/vanilla';
 
-import { INBOX_SESSION_ID } from '@/const/session';
-import { SESSION_CHAT_URL } from '@/const/url';
-import { settingsSelectors, useGlobalStore } from '@/store/global';
+import { message } from '@/components/AntdStaticMethods';
+import { MESSAGE_CANCEL_FLAT } from '@/const/message';
+import { DEFAULT_AGENT_LOBE_SESSION, INBOX_SESSION_ID } from '@/const/session';
+import { useClientDataSWR } from '@/libs/swr';
+import { sessionService } from '@/services/session';
 import { SessionStore } from '@/store/session';
-import { LobeAgentSession, LobeAgentSettings, LobeSessions } from '@/types/session';
+import { useUserStore } from '@/store/user';
+import { settingsSelectors } from '@/store/user/selectors';
+import { MetaData } from '@/types/meta';
+import {
+  ChatSessionList,
+  LobeAgentSession,
+  LobeSessionGroups,
+  LobeSessionType,
+  LobeSessions,
+  UpdateSessionParams,
+} from '@/types/session';
 import { merge } from '@/utils/merge';
 import { setNamespace } from '@/utils/storeDebug';
-import { uuid } from '@/utils/uuid';
 
-import { initInbox, initLobeSession } from './initialState';
-import { SessionDispatch, sessionsReducer } from './reducers/session';
+import { SessionDispatch, sessionsReducer } from './reducers';
+import { sessionSelectors } from './selectors';
+import { sessionMetaSelectors } from './selectors/meta';
 
-const t = setNamespace('session');
+const n = setNamespace('session');
 
+const FETCH_SESSIONS_KEY = 'fetchSessions';
+const SEARCH_SESSIONS_KEY = 'searchSessions';
+
+/* eslint-disable typescript-sort-keys/interface */
 export interface SessionAction {
-  activeSession: (sessionId: string) => void;
-  clearSessions: () => void;
   /**
-   * @title 添加会话
-   * @param session - 会话信息
-   * @returns void
+   * switch the session
    */
-  createSession: (agent?: DeepPartial<LobeAgentSettings>) => Promise<string>;
+  switchSession: (sessionId: string) => void;
   /**
-   * 变更session
-   * @param payload - 聊天记录
+   * reset sessions to default
    */
-  dispatchSession: (payload: SessionDispatch) => void;
-  importInbox: (inbox: LobeAgentSession) => void;
+  clearSessions: () => Promise<void>;
   /**
-   * 导入会话
-   * @param sessions
+   * create a new session
+   * @param agent
+   * @returns sessionId
    */
-  importSessions: (sessions: LobeSessions) => void;
+  createSession: (
+    session?: DeepPartial<LobeAgentSession>,
+    isSwitchSession?: boolean,
+  ) => Promise<string>;
+  duplicateSession: (id: string) => Promise<void>;
+  triggerSessionUpdate: (id: string) => Promise<void>;
+  updateSessionGroupId: (sessionId: string, groupId: string) => Promise<void>;
+  updateSessionMeta: (meta: Partial<MetaData>) => void;
 
   /**
-   * 置顶会话
-   * @param sessionId
+   * Pins or unpins a session.
    */
-  pinSession: (sessionId: string, pinned?: boolean) => void;
-
+  pinSession: (id: string, pinned: boolean) => Promise<void>;
   /**
-   * 生成压缩后的消息
-   * @returns 压缩后的消息
+   * re-fetch the data
    */
-  // genShareUrl: () => string;
+  refreshSessions: () => Promise<void>;
   /**
-   * @title 删除会话
-   * @param index - 会话索引
-   * @returns void
+   * remove session
+   * @param id - sessionId
    */
-  removeSession: (sessionId: string) => void;
+  removeSession: (id: string) => Promise<void>;
 
-  switchBackToChat: () => void;
+  updateSearchKeywords: (keywords: string) => void;
 
-  /**
-   * @title 切换会话
-   * @param sessionId - 会话索引
-   * @returns void
-   */
-  switchSession: (sessionId?: string) => void;
+  useFetchSessions: (
+    enabled: boolean,
+    isLogin: boolean | undefined,
+  ) => SWRResponse<ChatSessionList>;
+  useSearchSessions: (keyword?: string) => SWRResponse<any>;
+
+  internal_dispatchSessions: (payload: SessionDispatch) => void;
+  internal_updateSession: (id: string, data: Partial<UpdateSessionParams>) => Promise<void>;
+  internal_processSessions: (
+    sessions: LobeSessions,
+    customGroups: LobeSessionGroups,
+    actions?: string,
+  ) => void;
+  /* eslint-enable */
 }
 
 export const createSessionSlice: StateCreator<
@@ -71,105 +95,184 @@ export const createSessionSlice: StateCreator<
   [],
   SessionAction
 > = (set, get) => ({
-  activeSession: (sessionId) => {
-    set({ activeId: sessionId, activeTopicId: undefined }, false, t('activeSession'));
+  clearSessions: async () => {
+    await sessionService.removeAllSessions();
+    await get().refreshSessions();
   },
 
-  clearSessions: () => {
-    set({ inbox: initInbox, sessions: {} }, false, t('clearSessions'));
-  },
+  createSession: async (agent, isSwitchSession = true) => {
+    const { switchSession, refreshSessions } = get();
 
-  createSession: async (agent) => {
-    const { dispatchSession, switchSession } = get();
-
-    const timestamp = Date.now();
-
-    // 合并 settings 里的 defaultAgent
+    // merge the defaultAgent in settings
     const defaultAgent = merge(
-      initLobeSession,
-      settingsSelectors.defaultAgent(useGlobalStore.getState()),
+      DEFAULT_AGENT_LOBE_SESSION,
+      settingsSelectors.defaultAgent(useUserStore.getState()),
     );
 
-    const newSession: LobeAgentSession = merge(defaultAgent, {
-      ...agent,
-      createAt: timestamp,
-      id: uuid(),
-      updateAt: timestamp,
+    const newSession: LobeAgentSession = merge(defaultAgent, agent);
+
+    const id = await sessionService.createSession(LobeSessionType.Agent, newSession);
+    await refreshSessions();
+
+    // Whether to goto  to the new session after creation, the default is to switch to
+    if (isSwitchSession) switchSession(id);
+
+    return id;
+  },
+  duplicateSession: async (id) => {
+    const { switchSession, refreshSessions } = get();
+    const session = sessionSelectors.getSessionById(id)(get());
+
+    if (!session) return;
+    const title = sessionMetaSelectors.getTitle(session.meta);
+
+    const newTitle = t('duplicateSession.title', { ns: 'chat', title: title });
+
+    const messageLoadingKey = 'duplicateSession.loading';
+
+    message.loading({
+      content: t('duplicateSession.loading', { ns: 'chat' }),
+      duration: 0,
+      key: messageLoadingKey,
     });
 
-    dispatchSession({ session: newSession, type: 'addSession' });
+    const newId = await sessionService.cloneSession(id, newTitle);
 
-    switchSession(newSession.id);
+    // duplicate Session Error
+    if (!newId) {
+      message.destroy(messageLoadingKey);
+      message.error(t('copyFail', { ns: 'common' }));
+      return;
+    }
 
-    return newSession.id;
+    await refreshSessions();
+    message.destroy(messageLoadingKey);
+    message.success(t('duplicateSession.success', { ns: 'chat' }));
+
+    switchSession(newId);
   },
+  pinSession: async (id, pinned) => {
+    await get().internal_updateSession(id, { pinned });
+  },
+  removeSession: async (sessionId) => {
+    await sessionService.removeSession(sessionId);
+    await get().refreshSessions();
 
-  dispatchSession: (payload) => {
-    const { type, ...res } = payload;
-
-    // 如果是 inbox 类型的 session
-    if ('id' in res && res.id === INBOX_SESSION_ID) {
-      const nextInbox = sessionsReducer({ inbox: get().inbox }, payload) as {
-        inbox: LobeAgentSession;
-      };
-      set({ inbox: nextInbox.inbox }, false, t(`dispatchInbox/${type}`, res));
-    } else {
-      // 常规类型的session
-      set(
-        { sessions: sessionsReducer(get().sessions, payload) },
-        false,
-        t(`dispatchSessions/${type}`, res),
-      );
+    // If the active session deleted, switch to the inbox session
+    if (sessionId === get().activeId) {
+      get().switchSession(INBOX_SESSION_ID);
     }
   },
-  // TODO：暂时先不实现导入 inbox 的功能
-  importInbox: () => {},
-  importSessions: (importSessions) => {
-    const { sessions } = get();
-    set(
-      {
-        sessions: produce(sessions, (draft) => {
-          for (const [id, session] of Object.entries(importSessions)) {
-            // 如果已经存在，则跳过
-            if (draft[id]) continue;
 
-            draft[id] = session;
-          }
-        }),
-      },
+  switchSession: (sessionId) => {
+    if (get().activeId === sessionId) return;
+
+    set({ activeId: sessionId }, false, n(`activeSession/${sessionId}`));
+  },
+
+  triggerSessionUpdate: async (id) => {
+    await get().internal_updateSession(id, { updatedAt: new Date() });
+  },
+
+  updateSearchKeywords: (keywords) => {
+    set(
+      { isSearching: !!keywords, sessionSearchKeywords: keywords },
       false,
-      t('importSessions', importSessions),
+      n('updateSearchKeywords'),
     );
   },
-
-  pinSession: (sessionId, pinned) => {
-    const nextValue = typeof pinned === 'boolean' ? pinned : !get().sessions[sessionId].pinned;
-
-    get().dispatchSession({ id: sessionId, pinned: nextValue, type: 'toggleSessionPinned' });
+  updateSessionGroupId: async (sessionId, group) => {
+    await get().internal_updateSession(sessionId, { group });
   },
 
-  removeSession: (sessionId) => {
-    get().dispatchSession({ id: sessionId, type: 'removeSession' });
+  updateSessionMeta: async (meta) => {
+    const session = sessionSelectors.currentSession(get());
+    if (!session) return;
 
-    if (sessionId === get().activeId) {
-      get().switchSession();
-    }
+    const { activeId, refreshSessions } = get();
+
+    const abortController = get().signalSessionMeta as AbortController;
+    if (abortController) abortController.abort(MESSAGE_CANCEL_FLAT);
+    const controller = new AbortController();
+    set({ signalSessionMeta: controller }, false, 'updateSessionMetaSignal');
+
+    await sessionService.updateSessionMeta(activeId, meta, controller.signal);
+    await refreshSessions();
   },
 
-  switchBackToChat: () => {
-    const { activeId, router } = get();
+  useFetchSessions: (enabled, isLogin) =>
+    useClientDataSWR<ChatSessionList>(
+      enabled ? [FETCH_SESSIONS_KEY, isLogin] : null,
+      () => sessionService.getGroupedSessions(),
+      {
+        fallbackData: {
+          sessionGroups: [],
+          sessions: [],
+        },
+        onSuccess: (data) => {
+          if (
+            get().isSessionsFirstFetchFinished &&
+            isEqual(get().sessions, data.sessions) &&
+            isEqual(get().sessionGroups, data.sessionGroups)
+          )
+            return;
 
-    const id = activeId || INBOX_SESSION_ID;
+          get().internal_processSessions(
+            data.sessions,
+            data.sessionGroups,
+            n('useFetchSessions/updateData') as any,
+          );
+          set({ isSessionsFirstFetchFinished: true }, false, n('useFetchSessions/onSuccess', data));
+        },
+        suspense: true,
+      },
+    ),
+  useSearchSessions: (keyword) =>
+    useSWR<LobeSessions>(
+      [SEARCH_SESSIONS_KEY, keyword],
+      async () => {
+        if (!keyword) return [];
 
-    get().activeSession(id);
+        return sessionService.searchSessions(keyword);
+      },
+      { revalidateOnFocus: false, revalidateOnMount: false },
+    ),
 
-    router?.push(SESSION_CHAT_URL(id, get().isMobile));
+  /* eslint-disable sort-keys-fix/sort-keys-fix */
+  internal_dispatchSessions: (payload) => {
+    const nextSessions = sessionsReducer(get().sessions, payload);
+    get().internal_processSessions(nextSessions, get().sessionGroups);
   },
-  switchSession: (sessionId = INBOX_SESSION_ID) => {
-    const { isMobile, router } = get();
+  internal_updateSession: async (id, data) => {
+    get().internal_dispatchSessions({ type: 'updateSession', id, value: data });
 
-    get().activeSession(sessionId);
+    await sessionService.updateSession(id, data);
+    await get().refreshSessions();
+  },
+  internal_processSessions: (sessions, sessionGroups) => {
+    const customGroups = sessionGroups.map((item) => ({
+      ...item,
+      children: sessions.filter((i) => i.group === item.id && !i.pinned),
+    }));
 
-    router?.push(SESSION_CHAT_URL(sessionId, isMobile));
+    const defaultGroup = sessions.filter(
+      (item) => (!item.group || item.group === 'default') && !item.pinned,
+    );
+    const pinnedGroup = sessions.filter((item) => item.pinned);
+
+    set(
+      {
+        customSessionGroups: customGroups,
+        defaultSessions: defaultGroup,
+        pinnedSessions: pinnedGroup,
+        sessionGroups,
+        sessions,
+      },
+      false,
+      n('processSessions'),
+    );
+  },
+  refreshSessions: async () => {
+    await mutate([FETCH_SESSIONS_KEY, true]);
   },
 });

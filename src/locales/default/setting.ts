@@ -1,9 +1,27 @@
 export default {
+  about: {
+    title: '关于',
+  },
+  agentTab: {
+    chat: '聊天偏好',
+    meta: '助手信息',
+    modal: '模型设置',
+    plugin: '插件设置',
+    prompt: '角色设定',
+    tts: '语音服务',
+  },
+  analytics: {
+    telemetry: {
+      desc: '通过选择发送遥测数据，你可以帮助我们改善 {{appName}} 整体用户体验',
+      title: '发送匿名使用数据',
+    },
+    title: '数据统计',
+  },
   danger: {
     clear: {
       action: '立即清除',
       confirm: '确认清除所有聊天数据？',
-      desc: '清除所有会话数据',
+      desc: '将会清除所有会话数据，包括助手、文件、消息、插件等',
       success: '已清除所有会话消息',
       title: '清除所有会话消息',
     },
@@ -11,78 +29,108 @@ export default {
       action: '立即重置',
       confirm: '确认重置所有设置？',
       currentVersion: '当前版本',
-      desc: '重置所有设置项回默认值',
+      desc: '重置所有设置，使用默认值',
+      success: '已重置所有设置',
       title: '重置所有设置',
     },
   },
   header: {
+    desc: '偏好与模型设置',
     global: '全局设置',
     session: '会话设置',
+    sessionDesc: '角色设定与会话偏好',
     sessionWithName: '会话设置 · {{name}}',
+    title: '设置',
   },
   llm: {
-    AzureOpenAI: {
-      endpoint: {
-        desc: '从 Azure 门户检查资源时，可在“密钥和终结点”部分中找到此值',
-        placeholder: 'https://docs-test-001.openai.azure.com',
-        title: 'Azure API 地址',
-      },
-      models: {
-        desc: '支持的模型',
-        title: '模型列表',
-      },
-      title: 'Azure OpenAI 设置',
-      token: {
-        desc: '从 Azure 门户检查资源时，可在“密钥和终结点”部分中找到此值。 可以使用 KEY1 或 KEY2',
-        placeholder: 'Azure API Key',
-        title: 'API Key',
+    aesGcm: '您的秘钥与代理地址等将使用 <1>AES-GCM</1> 加密算法进行加密',
+    apiKey: {
+      desc: '请填写你的 {{name}} API Key',
+      placeholder: '{{name}} API Key',
+      title: 'API Key',
+    },
+    checker: {
+      button: '检查',
+      desc: '测试 Api Key 与代理地址是否正确填写',
+      pass: '检查通过',
+      title: '连通性检查',
+    },
+    customModelCards: {
+      addNew: '创建并添加 {{id}} 模型',
+      config: '配置模型',
+      confirmDelete: '即将删除该自定义模型，删除后将不可恢复，请谨慎操作。',
+      modelConfig: {
+        azureDeployName: {
+          extra: '在 Azure OpenAI 中实际请求的字段',
+          placeholder: '请输入 Azure 中的模型部署名称',
+          title: '模型部署名称',
+        },
+        displayName: {
+          placeholder: '请输入模型的展示名称，例如 ChatGPT、GPT-4 等',
+          title: '模型展示名称',
+        },
+        files: {
+          extra: '当前文件上传实现仅为一种 Hack 方案，仅限自行尝试。完整文件上传能力请等待后续实现',
+          title: '支持文件上传',
+        },
+        functionCall: {
+          extra:
+            '此配置将仅开启应用中的函数调用能力，是否支持函数调用完全取决于模型本身，请自行测试该模型的函数调用能力可用性',
+          title: '支持函数调用',
+        },
+        id: {
+          extra: '将作为模型标签进行展示',
+          placeholder: '请输入模型id，例如 gpt-4-turbo-preview 或 claude-2.1',
+          title: '模型 ID',
+        },
+        modalTitle: '自定义模型配置',
+        tokens: {
+          title: '最大 token 数',
+        },
+        vision: {
+          extra:
+            '此配置将仅开启应用中的图片上传配置，是否支持识别完全取决于模型本身，请自行测试该模型的视觉识别能力可用性',
+          title: '支持视觉识别',
+        },
       },
     },
-    OpenAI: {
-      azureApiVersion: {
-        desc: 'Azure 的 API 版本，遵循 YYYY-MM-DD 格式，查阅[最新版本](https://learn.microsoft.com/zh-cn/azure/ai-services/openai/reference#chat-completions)',
-        fetch: '获取列表',
-        title: 'Azure Api Version',
-      },
-      check: {
-        button: '检查',
-        desc: '测试 Api Key 与代理地址是否正确填写',
-        pass: '检查通过',
-        title: '连通性检查',
-      },
-      customModelName: {
-        desc: '增加自定义模型，多个模型使用逗号（,） 隔开',
-        placeholder: 'model1,model2,model3',
-        title: '自定义模型名称',
-      },
-      endpoint: {
-        desc: '除默认地址外，必须包含 http(s)://',
-        placeholder: 'https://api.openai.com/v1',
-        title: '接口代理地址',
-      },
-      models: {
-        count: '共支持 {{count}} 个模型',
-        desc: '支持的模型',
-        fetch: '获取模型列表',
-        notSupport: 'Azure OpenAI 暂不支持查看模型列表',
-        notSupportTip: '你需要自行确保部署名称与模型名称一致',
-        refetch: '重新获取模型列表',
-        title: '模型列表',
-      },
-      title: 'OpenAI 设置',
-      token: {
-        desc: '使用自己的 OpenAI Key',
-        placeholder: 'OpenAI API Key',
-        title: 'API Key',
-      },
-      useAzure: {
-        desc: '使用 Azure 提供的 OpenAI 服务',
-        fetch: '获取列表',
-        serverConfig: '管理员在服务端配置开启了 Azure OpenAI，禁止切换',
-        title: 'Azure OpenAI',
-      },
+    fetchOnClient: {
+      desc: '客户端请求模式将从浏览器直接发起会话请求，可提升响应速度',
+      title: '使用客户端请求模式',
     },
-    waitingForMore: '更多模型正在 <1>计划接入</1> 中，敬请期待 ✨',
+    fetcher: {
+      clear: '清除获取的模型',
+      fetch: '获取模型列表',
+      fetching: '正在获取模型列表...',
+      latestTime: '上次更新时间：{{time}}',
+      noLatestTime: '暂未获取列表',
+    },
+    helpDoc: '配置教程',
+    modelList: {
+      desc: '选择在会话中展示的模型，选择的模型会在模型列表中展示',
+      placeholder: '请从列表中选择模型',
+      title: '模型列表',
+      total: '共 {{count}} 个模型可用',
+    },
+    proxyUrl: {
+      desc: '除默认地址外，必须包含 http(s)://',
+      title: 'API 代理地址',
+    },
+    waitingForMore: '更多模型正在 <1>计划接入</1> 中，敬请期待',
+  },
+  plugin: {
+    addTooltip: '自定义插件',
+    clearDeprecated: '移除无效插件',
+    empty: '暂无已安装插件，欢迎前往 <1>插件商店</1> 探索',
+    installStatus: {
+      deprecated: '已卸载',
+    },
+    settings: {
+      hint: '请根据描述填写以下配置',
+      title: '{{id}} 插件配置',
+      tooltip: '插件配置',
+    },
+    store: '插件商店',
   },
   settingAgent: {
     avatar: {
@@ -129,18 +177,19 @@ export default {
       desc: '会话过程中是否自动创建话题，仅在临时话题中生效',
       title: '自动创建话题',
     },
-    enableCompressThreshold: {
-      title: '是否开启历史消息长度压缩阈值',
+    enableCompressHistory: {
+      title: '开启历史消息自动总结',
     },
     enableHistoryCount: {
       alias: '不限制',
       limited: '只包含 {{number}} 条会话消息',
+      setlimited: '使用历史消息数',
       title: '限制历史消息数',
       unlimited: '不限历史消息数',
     },
     historyCount: {
-      desc: '每次请求携带的历史消息数',
-      title: '附带历史消息数',
+      desc: '每次请求携带的消息数（包括最新编写的提问。每个提问和回答都计算1）',
+      title: '附带消息数',
     },
     inputTemplate: {
       desc: '用户最新的一条消息会填充到此模板',
@@ -162,13 +211,7 @@ export default {
       title: '单次回复限制',
     },
     model: {
-      desc: 'ChatGPT 模型',
-      list: {
-        'gpt-3.5-turbo': 'GPT 3.5',
-        'gpt-3.5-turbo-16k': 'GPT 3.5 (16K)',
-        'gpt-4': 'GPT 4',
-        'gpt-4-32k': 'GPT 4 (32K)',
-      },
+      desc: '{{provider}} 模型',
       title: '模型',
     },
     presencePenalty: {
@@ -187,11 +230,6 @@ export default {
     },
   },
   settingPlugin: {
-    add: '添加',
-    addTooltip: '添加自定义插件',
-    clearDeprecated: '移除无效插件',
-    config: '{{id}} 插件配置',
-    settings: '配置插件市场',
     title: '插件列表',
   },
   settingSystem: {
@@ -200,11 +238,28 @@ export default {
       placeholder: '请输入访问密码',
       title: '访问密码',
     },
+    oauth: {
+      info: {
+        desc: '已登录',
+        title: '账户信息',
+      },
+      signin: {
+        action: '登录',
+        desc: '使用 SSO 登录以解锁应用',
+        title: '登录账号',
+      },
+      signout: {
+        action: '退出登录',
+        confirm: '确认退出？',
+        success: '退出登录成功',
+      },
+    },
     title: '系统设置',
   },
   settingTTS: {
     openai: {
       sttModel: 'OpenAI 语音识别模型',
+      title: 'OpenAI',
       ttsModel: 'OpenAI 语音合成模型',
     },
     showAllLocaleVoice: {
@@ -242,6 +297,9 @@ export default {
     },
     fontSize: {
       desc: '聊天内容的字体大小',
+      marks: {
+        normal: '标准',
+      },
       title: '字体大小',
     },
     lang: {
@@ -271,10 +329,106 @@ export default {
     placeholder: '请输入助手的标识符，需要是唯一的，比如 web-development',
     tooltips: '分享到助手市场',
   },
+  sync: {
+    device: {
+      deviceName: {
+        hint: '添加名称以便于识别',
+        placeholder: '请输入设备名称',
+        title: '设备名称',
+      },
+      title: '设备信息',
+      unknownBrowser: '未知浏览器',
+      unknownOS: '未知系统',
+    },
+    warning: {
+      tip: '经过较长一段时间社区公测，WebRTC 同步可能无法稳定满足通用的数据同步诉求。请自行 <1>部署信令服务器</1> 后使用。',
+    },
+    webrtc: {
+      channelName: {
+        desc: 'WebRTC 将使用此名创建同步频道，确保频道名称唯一',
+        placeholder: '请输入同步频道名称',
+        shuffle: '随机生成',
+        title: '同步频道名称',
+      },
+      channelPassword: {
+        desc: '添加密码确保频道私密性，只有密码正确时，设备才可加入频道',
+        placeholder: '请输入同步频道密码',
+        title: '同步频道密码',
+      },
+      desc: '实时、点对点的数据通信，需设备同时在线才可同步',
+      enabled: {
+        invalid: '请填写信令服务器和同步频道名称后再开启',
+        title: '开启同步',
+      },
+      signaling: {
+        desc: 'WebRTC 将使用该地址进行同步',
+        placeholder: '请输入信令服务器地址',
+        title: '信令服务器',
+      },
+      title: 'WebRTC 同步',
+    },
+  },
+  systemAgent: {
+    agentMeta: {
+      label: '助理元数据生成模型',
+      modelDesc: '指定用于生成助理名称、描述、头像、标签的模型',
+      title: '自动生成助理信息',
+    },
+    customPrompt: {
+      addPrompt: '添加自定义提示',
+      desc: '填写后，系统助理将在生成内容时使用自定义提示',
+      placeholder: '请输入自定义提示词',
+      title: '自定义提示词',
+    },
+    historyCompress: {
+      label: '会话历史模型',
+      modelDesc: '指定用于压缩会话历史的模型',
+      title: '自动总结会话历史',
+    },
+    queryRewrite: {
+      label: '提问重写模型',
+      modelDesc: '指定用于优化用户提问的模型',
+      title: '知识库提问重写',
+    },
+    thread: {
+      label: '子话题命名模型',
+      modelDesc: '指定用于子话题自动重命名的模型',
+      title: '子话题自动命名',
+    },
+    title: '系统助手',
+    topic: {
+      label: '话题命名模型',
+      modelDesc: '指定用于话题自动重命名的模型',
+      title: '话题自动命名',
+    },
+    translation: {
+      label: '翻译模型',
+      modelDesc: '指定用于翻译的模型',
+      title: '消息内容翻译',
+    },
+  },
   tab: {
-    agent: '默认助手',
-    common: '通用设置',
-    llm: '语言模型',
-    tts: '语音服务',
+    'about': '关于',
+    'agent': '默认助手',
+    'common': '通用设置',
+    'experiment': '实验',
+    'llm': '语言模型',
+    'provider': 'AI 服务商',
+    'sync': '云端同步',
+    'system-agent': '系统助手',
+    'tts': '语音服务',
+  },
+  tools: {
+    builtins: {
+      groupName: '内置插件',
+    },
+    disabled: '当前模型不支持函数调用，无法使用插件',
+    plugins: {
+      enabled: '已启用 {{num}}',
+      groupName: '三方插件',
+      noEnabled: '暂无启用插件',
+      store: '插件商店',
+    },
+    title: '扩展插件',
   },
 };

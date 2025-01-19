@@ -7,8 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { Flexbox } from 'react-layout-kit';
 
 import { useTTS } from '@/hooks/useTTS';
-import { ChatMessageError } from '@/types/chatMessage';
-import { TTSServer } from '@/types/session';
+import { TTSServer } from '@/types/agent';
+import { ChatMessageError } from '@/types/message';
 import { getMessageError } from '@/utils/fetch';
 
 interface SelectWithTTSPreviewProps extends SelectProps {
@@ -84,6 +84,7 @@ const SelectWithTTSPreview = forwardRef<RefSelectProps, SelectWithTTSPreviewProp
             isLoading={isGlobalLoading}
             onInitPlay={start}
             onLoadingStop={stop}
+            showDonload={false}
             showSlider={false}
             showTime={false}
             style={{ flex: 'none', padding: 0, width: 'unset' }}

@@ -1,5 +1,4 @@
-import { PersistStorage } from 'zustand/middleware';
-import { StorageValue } from 'zustand/middleware/persist';
+import { PersistStorage, StorageValue } from 'zustand/middleware';
 
 import { createIndexedDB } from './indexedDB';
 import { createKeyMapper } from './keyMapper';
@@ -10,35 +9,50 @@ import { creatUrlStorage } from './urlStorage';
 export const createHyperStorage = <T extends object>(
   options: HyperStorageOptions,
 ): PersistStorage<T> => {
-  const hasUrl = !!options.url;
-  const useIndexedDB = options.localStorage?.mode === 'indexedDB';
-  const dbName = options.localStorage?.dbName || 'indexedDB';
+  const optionsObj = typeof options === 'function' ? options() : options;
 
-  const { mapStateKeyToStorageKey, getStateKeyFromStorageKey } = createKeyMapper(options);
+  const getLocalStorageConfig = () => {
+    if (optionsObj.localStorage === false) {
+      return { dbName: '', skipLocalStorage: true, useIndexedDB: false };
+    }
+
+    const useIndexedDB = optionsObj.localStorage?.mode === 'indexedDB';
+    const dbName = optionsObj.localStorage?.dbName || 'indexedDB';
+
+    return { dbName, skipLocalStorage: false, useIndexedDB };
+  };
+
+  const hasUrl = !!optionsObj.url;
+
+  const { skipLocalStorage, useIndexedDB, dbName } = getLocalStorageConfig();
+
+  const { mapStateKeyToStorageKey, getStateKeyFromStorageKey } = createKeyMapper(optionsObj);
 
   const indexedDB = createIndexedDB(dbName);
   const localStorage = createLocalStorage();
-  const urlStorage = creatUrlStorage(options.url?.mode);
+  const urlStorage = creatUrlStorage(optionsObj.url?.mode);
   return {
     getItem: async (name): Promise<StorageValue<T>> => {
       const state: any = {};
       let version: number | undefined;
 
       // ============== 处理 Local Storage  ============== //
-      let localState: StorageValue<T> | undefined;
+      if (!skipLocalStorage) {
+        let localState: StorageValue<T> | undefined;
 
-      // 如果使用 indexedDB，优先从 indexedDB 中获取
-      if (useIndexedDB) {
-        localState = await indexedDB.getItem(name);
-      }
-      // 如果 indexedDB 中不存在，则再试试 localStorage
-      if (!localState) localState = localStorage.getItem(name);
+        // 如果使用 indexedDB，优先从 indexedDB 中获取
+        if (useIndexedDB) {
+          localState = await indexedDB.getItem(name);
+        }
+        // 如果 indexedDB 中不存在，则再试试 localStorage
+        if (!localState) localState = localStorage.getItem(name);
 
-      if (localState) {
-        version = localState.version;
-        for (const [k, v] of Object.entries(localState.state)) {
-          const key = getStateKeyFromStorageKey(k, 'localStorage');
-          if (key) state[key] = v;
+        if (localState) {
+          version = localState.version;
+          for (const [k, v] of Object.entries(localState.state)) {
+            const key = getStateKeyFromStorageKey(k, 'localStorage');
+            if (key) state[key] = v;
+          }
         }
       }
 
@@ -62,11 +76,12 @@ export const createHyperStorage = <T extends object>(
     },
     removeItem: async (key) => {
       // ============== 处理 Local Storage  ============== //
-
-      if (useIndexedDB) {
-        await indexedDB.removeItem(key);
-      } else {
-        localStorage.removeItem(key);
+      if (!skipLocalStorage) {
+        if (useIndexedDB) {
+          await indexedDB.removeItem(key);
+        } else {
+          localStorage.removeItem(key);
+        }
       }
 
       // ============== 处理 URL Storage  ============== //
@@ -85,10 +100,12 @@ export const createHyperStorage = <T extends object>(
         if (localKey) localState[localKey] = v;
       }
 
-      if (useIndexedDB) {
-        await indexedDB.setItem(name, localState, newValue.version);
-      } else {
-        localStorage.setItem(name, localState, newValue.version);
+      if (!skipLocalStorage) {
+        if (useIndexedDB) {
+          await indexedDB.setItem(name, localState, newValue.version);
+        } else {
+          localStorage.setItem(name, localState, newValue.version);
+        }
       }
 
       // ============== 处理 URL Storage  ============== //
